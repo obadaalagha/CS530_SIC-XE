@@ -1,14 +1,25 @@
 import numpy as np
 
 # Initialize registers
-registers = np.random.rand(9)
-registers = registers*(2**20)
-registers = registers.astype("int32")
+registers = np.random.rand(9);
+registers = registers*(2**20);
+registers = registers.astype("int32");
 
 # Initialize memory
-memory = np.random.rand(2**20)
-memory = memory*(2**20)
-memory = memory.astype("int32")
+#memory = np.random.rand(2**20);
+#memory = memory*(2**20);
+#memory = memory.astype("int32");
+
+class MemObj:
+    def __init__(self, trueValue, indexValue, currIndex, size):
+        self.trueValue = trueValue;
+        self.indexValue = indexValue;
+        self.size = size;
+
+memory = []
+for i in range(0, 0x1000000):
+    x = MemObj(None, None, None, None);
+    memory.append(x);
 
 # Operation Code table
 OpTable = {
@@ -71,7 +82,7 @@ OpTable = {
     'TIX': (0x2C, 3),
     'TIXR': (0xB8, 2),
     'WD': (0xDC, 3)
-}
+};
 
 directives = {
     'START': 'START',
@@ -85,65 +96,98 @@ directives = {
     'BYTE': 0,
     'NOBASE': 0,
     'WORD': 0
-}
+};
+
+def changeMemory(toAdd, address):
+    if type(toAdd) == str:
+        memory[address].size = len(toAdd) - 1;
+        memory[address].trueValue = toAdd;
+        for i in range(0, len(toAdd)):
+            memory[address+i].indexValue = toAdd[i];
+    elif type(toAdd) == int:
+        if(toAdd < 0x100):
+            memory[address].size = 0;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0x0000FF);
+        elif(toAdd < 0x10000):
+            memory[address].size = 1;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0x00FF00);
+            memory[address+1].indexValue = (toAdd & 0x0000FF);
+        elif(toAdd < 0x1000000):
+            memory[address].size = 2;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0xFF0000);
+            memory[address+1].indexValue = (toAdd & 0x00FF00);
+            memory[address+2].indexValue = (toAdd & 0x0000FF);
+        else:
+            print("ERROR 1");
+    else:
+        print("ERROR 2");
+
+#changeMemory("Obada", 4000);
+#print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
+
+#def addRegister():
+
 
 def first_pass(assembly_code):
     with open(assembly_code) as input:
 
         # Reading the first line
-        first_line = input.readline()
-        first_line = first_line.strip()
+        first_line = input.readline();
+        first_line = first_line.strip();
 
         # Getting program starting address
-        start = int(first_line[17:], 16)
-        loc_counter = start
-        labelDict = {}
+        start = int(first_line[17:], 16);
+        loc_counter = start;
+        labelDict = {};
 
         for line in input:
             # Getting label, mnemonic and arg from each line
-            label = line[0:7].strip()
-            mnemonic = line[9:15].strip()
-            arg = line[17:].strip()
+            label = line[0:7].strip();
+            mnemonic = line[9:15].strip();
+            arg = line[17:].strip();
 
             # If there is something in label, add it to the labelDict
             if(len(label) > 0):
-                labelDict[label] = loc_counter
+                labelDict[label] = loc_counter;
 
-            plus = False
+            plus = False;
             if(line[8] == "+"):
-                plus = True
+                plus = True;
             if(mnemonic in OpTable):
                 if(OpTable[mnemonic][1] > 2):
                     if(plus == True):
-                        loc_counter += 4
+                        loc_counter += 4;
                     else:
-                        loc_counter += 3
+                        loc_counter += 3;
                 elif((OpTable[mnemonic][1] == 2) and (plus == False)):
-                    loc_counter += 2
+                    loc_counter += 2;
                 elif((OpTable[mnemonic][1] == 1) and (plus == False)):
-                    loc_counter += 1
+                    loc_counter += 1;
             elif (mnemonic in directives):
                 if(mnemonic == 'RESW'):
-                    loc_counter += int(arg) * 3
+                    loc_counter += int(arg) * 3;
                 elif(mnemonic == 'RESB'):
-                    loc_counter += int(arg)
+                    loc_counter += int(arg);
                 elif(mnemonic == 'WORD'):
-                    loc_counter += 3
+                    loc_counter += 3;
                 elif(mnemonic == 'BYTE'):
-                    loc_counter += 1
+                    loc_counter += 1;
                 elif(mnemonic in directives):
-                    continue
+                    continue;
                 elif(directives[mnemonic] == 'END'):
-                    break
+                    break;
             else:
-                print("Error")
+                print("Error");
 
 
-    print("SYMTAB")
+    print("SYMTAB");
     for key,value in labelDict.items():
-        print("%-6s, 0x%X" %(key, value))
+        print("%-6s, 0x%X" %(key, value));
 
-    return labelDict
+    return labelDict;
 
 
 first_pass('SampleCode.txt')
