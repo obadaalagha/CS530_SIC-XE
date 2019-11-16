@@ -1,15 +1,16 @@
-import numpy as np;
+import numpy as np
 
 # Initialize registers
-registers = np.random.rand(9);
-registers = registers*(2**20);
-registers = registers.astype("int32");
+registers = np.random.rand(9)
+registers = registers*(2**20)
+registers = registers.astype("int32")
 
 # Initialize memory
-memory = np.random.rand(2**20);
-memory = memory*(2**20);
-memory = memory.astype("int32");
+memory = np.random.rand(2**20)
+memory = memory*(2**20)
+memory = memory.astype("int32")
 
+# Operation Code table
 OpTable = {
     'ADD': (0x18, 3),
     'ADDF': (0x58, 3),
@@ -88,53 +89,62 @@ directives = {
 
 def first_pass(assembly_code):
     with open(assembly_code) as input:
-        line2 = input.readline();
-        line2 = line2.strip();
-        start = int(line2[16:], 16);
-        loc_counter = start;
-        #print(line2[0:8])
-        labelList = {};
+
+        # Reading the first line
+        first_line = input.readline()
+        first_line = first_line.strip()
+
+        # Getting program starting address
+        start = int(first_line[17:], 16)
+        loc_counter = start
+        labelDict = {}
 
         for line in input:
-            label = line[0:7].strip();
-            mnemonic = line[9:15].strip();
-            arg = line[17:].strip();
+            # Getting label, mnemonic and arg from each line
+            label = line[0:7].strip()
+            mnemonic = line[9:15].strip()
+            arg = line[17:].strip()
+
+            # If there is something in label, add it to the labelDict
             if(len(label) > 0):
-                labelList[label] = loc_counter;
-            plus = False;
+                labelDict[label] = loc_counter
+
+            plus = False
             if(line[8] == "+"):
-                plus = True;
+                plus = True
             if(mnemonic in OpTable):
                 if(OpTable[mnemonic][1] > 2):
                     if(plus == True):
-                        loc_counter += 4;
+                        loc_counter += 4
                     else:
-                        loc_counter += 3;
+                        loc_counter += 3
                 elif((OpTable[mnemonic][1] == 2) and (plus == False)):
-                    loc_counter += 2;
+                    loc_counter += 2
                 elif((OpTable[mnemonic][1] == 1) and (plus == False)):
-                    loc_counter += 1;
+                    loc_counter += 1
             elif (mnemonic in directives):
                 if(mnemonic == 'RESW'):
-                    loc_counter += int(arg) * 3;
+                    loc_counter += int(arg) * 3
                 elif(mnemonic == 'RESB'):
-                    loc_counter += int(arg);
+                    loc_counter += int(arg)
                 elif(mnemonic == 'WORD'):
-                    loc_counter += 3;
+                    loc_counter += 3
                 elif(mnemonic == 'BYTE'):
-                    loc_counter += 1;
+                    loc_counter += 1
                 elif(mnemonic in directives):
-                    continue;
+                    continue
                 elif(directives[mnemonic] == 'END'):
-                    break;
+                    break
             else:
-                print("Error");
-
-        print("SYMTAB");
-        for i,j in labelList.items():
-            print("%-6s, 0x%X" %(i,j));
+                print("Error")
 
 
+    print("SYMTAB")
+    for key,value in labelDict.items():
+        print("%-6s, 0x%X" %(key, value))
 
-first_pass('testing.txt')
+    return labelDict
+
+
+first_pass('SampleCode.txt')
 
