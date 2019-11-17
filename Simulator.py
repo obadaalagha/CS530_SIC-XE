@@ -131,7 +131,8 @@ def first_pass(assembly_code):
         start = int(first_line[17:], 16);
         loc_counter = start;
         #line_count += 1;
-
+        locRecord.append(loc_counter);
+        
         for line in input:
             # Getting label, mnemonic and arg from each line
             label = line[0:7].strip();
@@ -179,6 +180,8 @@ def first_pass(assembly_code):
     print("SYMTAB");
     for key,value in SYMTAB.items():
         print("%-6s, 0x%X, %d" %(key, value[0], value[1]));
+    for locs in locRecord:
+        print("%X" %locs);
 
     return SYMTAB;
 
@@ -261,8 +264,6 @@ def second_pass(assembly_file):
             mnemonic = line[9:15].strip();
             arg = line[17:].strip();
 
-            line_count += 1;
-
             if(arg[16] == " "):
                 arg = getMemValue(getLabel(arg, 'Address'));
             elif(arg[16] == "#"):
@@ -301,6 +302,9 @@ def second_pass(assembly_file):
                 #elif()
             elif(mnemonic == "SHIFTR"):
                 registers[arg[0]].trueValue = registers[arg[0]].trueValue >> arg[1];
+
+            
+            line_count += 1;
             '''
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
