@@ -115,10 +115,11 @@ directives = {
 };
 
 SYMTAB = {};
+locRecord = [];
 
 def first_pass(assembly_code):
     with open(assembly_code) as input:
-
+        line_count = 0;
         # Reading the first line
         first_line = input.readline();
         first_line = first_line.strip();
@@ -126,6 +127,7 @@ def first_pass(assembly_code):
         # Getting program starting address
         start = int(first_line[17:], 16);
         loc_counter = start;
+        line_count += 1;
 
         for line in input:
             # Getting label, mnemonic and arg from each line
@@ -133,13 +135,17 @@ def first_pass(assembly_code):
             mnemonic = line[9:15].strip();
             arg = line[17:].strip();
 
+            line_count += 1;
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
-                SYMTAB[label] = loc_counter;
+                SYMTAB[label] = (loc_counter, line_count);
+
+            line_count = 0;
 
             plus = False;
             if(line[8] == "+"):
                 plus = True;
+            locRecord.append(loc_counter);
             if(mnemonic in OpTable):
                 if(OpTable[mnemonic][1] > 2):
                     if(plus == True):
@@ -166,7 +172,7 @@ def first_pass(assembly_code):
             else:
                 print("Error");
 
-
+    # TESTING PURPOSES
     print("SYMTAB");
     for key,value in SYMTAB.items():
         print("%-6s, 0x%X" %(key, value));
@@ -214,9 +220,11 @@ def getLabel(label, what):
     RETURN:
     """
     if what == 'Value':
-        return memory[SYMTAB[label]].trueValue;
-    elif what == 'Content':
-        return SYMTAB[label];
+        return memory[SYMTAB[label][0]].trueValue;
+    elif what == 'Address':
+        return SYMTAB[label][0];
+    elif what == 'Line':
+        return SYMTAB[label][1];
     else:
         print('ERROR 3 just for paul');
 
@@ -249,12 +257,12 @@ def second_pass(assembly_file):
             arg = line[17:].strip();
 
             if(arg[16] == " "):
-                arg = getMemValue(SYMTAB[arg]);
+                arg = getMemValue(getLabel(arg, 'Address'));
             elif(arg[16] == "#"):
                 if(arg not in SYMTAB):
                     arg = int(arg);
                 else:
-                    arg = int(SYMTAB[arg]);
+                    arg = int(getLabel(arg, 'Address'));
             elif("," in arg):
                 pos = arg.find(",");
                 one = arg[0:pos];
@@ -264,21 +272,23 @@ def second_pass(assembly_file):
                 pos = arg.find('+');
                 one = arg[0:pos];
                 two = arg[pos+1:];
-                arg = SYMTAB[one] + SYMTAB[two];
+                arg = getLabel(one, 'Address') + getLabel(two, 'Address');
             elif("-" in arg):
                 pos = arg.find('-');
                 one = arg[0:pos];
                 two = arg[pos+1:];
-                arg = SYMTAB[one] - SYMTAB[two];
+                arg = getLabel(one, 'Address') - getLabel(two, 'Address');
             elif(arg[16] == "@"):
                 arg = getMemValue(getMemValue(int(arg)));
             else:
                 print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
             
             if(mnemonic == "AND"):
-                registers['A'] = registers['A'] & arg;
-            #elif(mnemonic == ""):
-            #    re
+                registers['A'].trueValue = registers['A'].trueValue & arg;
+            elif(mnemonic == "OR"):
+                registers['A'].trueValue = registers['A'].trueValue | arg;
+            elif(mnemonic == "SHIFTL"):
+                registers['A'].trueValue = registers['A'].trueValue  
             '''
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
