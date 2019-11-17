@@ -119,16 +119,18 @@ SYMTAB = {};
 locRecord = [];
 
 def first_pass(assembly_code):
+    #line_count = 1;
     with open(assembly_code) as input:
         line_count = 0;
         # Reading the first line
         first_line = input.readline();
         first_line = first_line.strip();
+        #line_count = 0;
 
         # Getting program starting address
         start = int(first_line[17:], 16);
         loc_counter = start;
-        line_count += 1;
+        #line_count += 1;
 
         for line in input:
             # Getting label, mnemonic and arg from each line
@@ -141,7 +143,7 @@ def first_pass(assembly_code):
             if(len(label) > 0):
                 SYMTAB[label] = (loc_counter, line_count);
 
-            line_count = 0;
+            #line_count = 0;
 
             plus = False;
             if(line[8] == "+"):
@@ -176,7 +178,7 @@ def first_pass(assembly_code):
     # TESTING PURPOSES
     print("SYMTAB");
     for key,value in SYMTAB.items():
-        print("%-6s, 0x%X" %(key, value));
+        print("%-6s, 0x%X, %d" %(key, value[0], value[1]));
 
     return SYMTAB;
 
