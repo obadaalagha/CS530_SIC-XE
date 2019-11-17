@@ -247,8 +247,38 @@ def second_pass(assembly_file):
             label = line[0:7].strip();
             mnemonic = line[9:15].strip();
             arg = line[17:].strip();
-            
 
+            if(arg[16] == " "):
+                arg = getMemValue(SYMTAB[arg]);
+            elif(arg[16] == "#"):
+                if(arg not in SYMTAB):
+                    arg = int(arg);
+                else:
+                    arg = int(SYMTAB[arg]);
+            elif("," in arg):
+                pos = arg.find(",");
+                one = arg[0:pos];
+                two = arg[pos+1:];
+                arg = (one,two);
+            elif("+" in arg):
+                pos = arg.find('+');
+                one = arg[0:pos];
+                two = arg[pos+1:];
+                arg = SYMTAB[one] + SYMTAB[two];
+            elif("-" in arg):
+                pos = arg.find('-');
+                one = arg[0:pos];
+                two = arg[pos+1:];
+                arg = SYMTAB[one] - SYMTAB[two];
+            elif(arg[16] == "@"):
+                arg = getMemValue(getMemValue(int(arg)));
+            else:
+                print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
+            
+            if(mnemonic == "AND"):
+                registers['A'] = registers['A'] & arg;
+            #elif(mnemonic == ""):
+            #    re
             '''
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
