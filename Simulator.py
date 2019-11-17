@@ -25,6 +25,7 @@ registers = {
     'A': StorageObject(None, None, None),
     'X': StorageObject(None, None, None),
     'L': StorageObject(None, None, None),
+    'B': StorageObject(None, None, None),
     'S': StorageObject(None, None, None),
     'T': StorageObject(None, None, None),
     'F': float(0.),
@@ -242,6 +243,7 @@ def getReg(regName):
 
 def second_pass(assembly_file):
     with open(assembly_file) as input:
+        line_count = 0;
         # Reading the first line
         first_line = input.readline();
         first_line = first_line.strip();
@@ -249,12 +251,15 @@ def second_pass(assembly_file):
         # Getting program starting address
         start = int(first_line[17:], 16);
         loc_counter = start;
+        line_count += 1;
 
         for line in input:
             # Getting label, mnemonic and arg from each line
             label = line[0:7].strip();
             mnemonic = line[9:15].strip();
             arg = line[17:].strip();
+
+            line_count += 1;
 
             if(arg[16] == " "):
                 arg = getMemValue(getLabel(arg, 'Address'));
@@ -288,7 +293,12 @@ def second_pass(assembly_file):
             elif(mnemonic == "OR"):
                 registers['A'].trueValue = registers['A'].trueValue | arg;
             elif(mnemonic == "SHIFTL"):
-                registers['A'].trueValue = registers['A'].trueValue  
+                #registers = [A, X, L, B, S, T, float(F), int(PC), str(SW)];
+                if(type(arg[0]) == "StorageObject"):
+                    registers[arg[0]].trueValue = registers[arg[0]].trueValue << arg[1];
+                #elif()
+            elif(mnemonic == "SHIFTR"):
+                registers[arg[0]].trueValue = registers[arg[0]].trueValue >> arg[1];
             '''
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
