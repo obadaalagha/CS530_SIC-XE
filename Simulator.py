@@ -1,24 +1,40 @@
-import numpy as np
+class StorageObject:
+    def __init__(self, trueValue, indexValue, size):
+        self.trueValue = trueValue;
+        self.indexValue = indexValue;
+        self.size = size;
+
 
 # Initialize registers
-registers = np.random.rand(9);
-registers = registers*(2**20);
-registers = registers.astype("int32");
+#registers = np.random.rand(9);
+#registers = registers*(2**20);
+#registers = registers.astype("int32");
 
 # Initialize memory
 #memory = np.random.rand(2**20);
 #memory = memory*(2**20);
 #memory = memory.astype("int32");
+# A X L B S T F PC SW
+#A, X, L, B, S, T = StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None);
+#F = 0.;
+#PC = -1;
+#SW = None;
+#registers = [A, X, L, B, S, T, float(F), int(PC), str(SW)];
 
-class MemObj:
-    def __init__(self, trueValue, indexValue, currIndex, size):
-        self.trueValue = trueValue;
-        self.indexValue = indexValue;
-        self.size = size;
+registers = {
+    'A': StorageObject(None, None, None),
+    'X': StorageObject(None, None, None),
+    'L': StorageObject(None, None, None),
+    'S': StorageObject(None, None, None),
+    'T': StorageObject(None, None, None),
+    'F': float(0.),
+    'PC': -1,
+    'SW': None
+};
 
-memory = []
+memory = [];
 for i in range(0, 0x1000000):
-    x = MemObj(None, None, None, None);
+    x = StorageObject(None, None, None);
     memory.append(x);
 
 # Operation Code table
@@ -98,38 +114,7 @@ directives = {
     'WORD': 0
 };
 
-def changeMemory(toAdd, address):
-    if type(toAdd) == str:
-        memory[address].size = len(toAdd) - 1;
-        memory[address].trueValue = toAdd;
-        for i in range(0, len(toAdd)):
-            memory[address+i].indexValue = toAdd[i];
-    elif type(toAdd) == int:
-        if(toAdd < 0x100):
-            memory[address].size = 0;
-            memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0x0000FF);
-        elif(toAdd < 0x10000):
-            memory[address].size = 1;
-            memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0x00FF00);
-            memory[address+1].indexValue = (toAdd & 0x0000FF);
-        elif(toAdd < 0x1000000):
-            memory[address].size = 2;
-            memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0xFF0000);
-            memory[address+1].indexValue = (toAdd & 0x00FF00);
-            memory[address+2].indexValue = (toAdd & 0x0000FF);
-        else:
-            print("ERROR 1");
-    else:
-        print("ERROR 2");
-
-#changeMemory("Obada", 4000);
-#print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
-
-#def addRegister():
-
+SYMTAB = {};
 
 def first_pass(assembly_code):
     with open(assembly_code) as input:
@@ -141,7 +126,6 @@ def first_pass(assembly_code):
         # Getting program starting address
         start = int(first_line[17:], 16);
         loc_counter = start;
-        labelDict = {};
 
         for line in input:
             # Getting label, mnemonic and arg from each line
@@ -149,9 +133,9 @@ def first_pass(assembly_code):
             mnemonic = line[9:15].strip();
             arg = line[17:].strip();
 
-            # If there is something in label, add it to the labelDict
+            # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
-                labelDict[label] = loc_counter;
+                SYMTAB[label] = loc_counter;
 
             plus = False;
             if(line[8] == "+"):
@@ -184,11 +168,127 @@ def first_pass(assembly_code):
 
 
     print("SYMTAB");
-    for key,value in labelDict.items():
+    for key,value in SYMTAB.items():
         print("%-6s, 0x%X" %(key, value));
 
-    return labelDict;
+    return SYMTAB;
 
+def changeMemory(toAdd, address):
+    if type(toAdd) == str:
+        memory[address].size = len(toAdd) - 1;
+        memory[address].trueValue = toAdd;
+        for i in range(0, len(toAdd)):
+            memory[address+i].indexValue = ord(toAdd[i]);
+    elif type(toAdd) == int:
+        if(toAdd < 0x100):
+            memory[address].size = 0;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0x0000FF);
+        elif(toAdd < 0x10000):
+            memory[address].size = 1;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0x00FF00);
+            memory[address+1].indexValue = (toAdd & 0x0000FF);
+        elif(toAdd < 0x1000000):
+            memory[address].size = 2;
+            memory[address].trueValue = toAdd;
+            memory[address].indexValue = (toAdd & 0xFF0000);
+            memory[address+1].indexValue = (toAdd & 0x00FF00);
+            memory[address+2].indexValue = (toAdd & 0x0000FF);
+        else:
+            print("ERROR 1");
+    else:
+        print("ERROR 2");
+
+def getMemValue(address):
+    '''
+
+    '''
+    return memory[address].indexValue;
+
+
+def getLabel(label, what):
+    """
+    ARGS:
+
+    RETURN:
+    """
+    if what == 'Value':
+        return memory[SYMTAB[label]].trueValue;
+    elif what == 'Content':
+        return SYMTAB[label];
+    else:
+        print('ERROR 3 just for paul');
+
+def modifyReg(regName, content):
+    if regName in registers:
+        registers[regName] = content;
+    else:
+        print('ERROR 4 just for paul v2');
+
+def getReg(regName):
+    if regName in registers:
+        return registers[regName];
+    else:
+        print('ERROR 5 JUST FOR PAUL');
+
+def second_pass(assembly_file):
+    with open(assembly_file) as input:
+        # Reading the first line
+        first_line = input.readline();
+        first_line = first_line.strip();
+
+        # Getting program starting address
+        start = int(first_line[17:], 16);
+        loc_counter = start;
+
+        for line in input:
+            # Getting label, mnemonic and arg from each line
+            label = line[0:7].strip();
+            mnemonic = line[9:15].strip();
+            arg = line[17:].strip();
+            
+
+            '''
+            # If there is something in label, add it to the SYMTAB
+            if(len(label) > 0):
+                SYMTAB[label] = loc_counter;
+
+            plus = False;
+            if(line[8] == "+"):
+                plus = True;
+            if(mnemonic in OpTable):
+                if(OpTable[mnemonic][1] > 2):
+                    if(plus == True):
+                        loc_counter += 4;
+                    else:
+                        loc_counter += 3;
+                elif((OpTable[mnemonic][1] == 2) and (plus == False)):
+                    loc_counter += 2;
+                elif((OpTable[mnemonic][1] == 1) and (plus == False)):
+                    loc_counter += 1;
+            elif (mnemonic in directives):
+                if(mnemonic == 'RESW'):
+                    loc_counter += int(arg) * 3;
+                elif(mnemonic == 'RESB'):
+                    loc_counter += int(arg);
+                elif(mnemonic == 'WORD'):
+                    loc_counter += 3;
+                elif(mnemonic == 'BYTE'):
+                    loc_counter += 1;
+                elif(mnemonic in directives):
+                    continue;
+                elif(directives[mnemonic] == 'END'):
+                    break;
+            else:
+                print("Error");
+    '''
+
+
+changeMemory("Obada", 4000);
+print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
+
+#def addRegister():
 
 first_pass('SampleCode.txt')
 
