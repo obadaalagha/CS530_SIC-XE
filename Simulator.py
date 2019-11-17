@@ -132,7 +132,7 @@ def first_pass(assembly_code):
         loc_counter = start;
         #line_count += 1;
         locRecord.append(loc_counter);
-        
+
         for line in input:
             # Getting label, mnemonic and arg from each line
             label = line[0:7].strip();
@@ -236,13 +236,27 @@ def getLabel(label, what):
 
 def modifyReg(regName, content):
     if regName in registers:
-        registers[regName] = content;
+        if(regName in ['A', 'X', 'S', 'B', 'T', 'L']):
+            registers[regName].trueValue = content;
+        elif(regName == "PC"):
+            registers[regName] = int(content);
+        elif(regName == "F"):
+            registers[regName] = float(content);
+        else:
+            registers[regName] = int(content);
+        # FIXME
     else:
         print('ERROR 4 just for paul v2');
 
 def getReg(regName):
     if regName in registers:
-        return registers[regName];
+        if(regName in ['A', 'X', 'S', 'B', 'T', 'L']):
+            return registers[regName].trueValue;
+        elif(regName == "PC" or regName == "F"):
+            return registers[regName];
+        else:
+            return registers[regName];
+            # FIXME 
     else:
         print('ERROR 5 JUST FOR PAUL');
 
