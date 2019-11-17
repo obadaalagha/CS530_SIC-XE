@@ -306,16 +306,13 @@ def second_pass(assembly_file):
                 print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
             
             if(mnemonic == "AND"):
-                registers['A'].trueValue = registers['A'].trueValue & arg;
+                modifyReg(A, (getReg(A) & arg));
             elif(mnemonic == "OR"):
-                registers['A'].trueValue = registers['A'].trueValue | arg;
+                modifyReg(A, (getReg(A) | arg));
             elif(mnemonic == "SHIFTL"):
-                #registers = [A, X, L, B, S, T, float(F), int(PC), str(SW)];
-                if(type(arg[0]) == "StorageObject"):
-                    registers[arg[0]].trueValue = registers[arg[0]].trueValue << arg[1];
-                #elif()
+                modifyReg(arg[0], (getReg(arg[0]) << arg[1]));
             elif(mnemonic == "SHIFTR"):
-                registers[arg[0]].trueValue = registers[arg[0]].trueValue >> arg[1];
+                modifyReg(arg[0], (getReg(arg[0]) >> arg[1]));
 
             
             line_count += 1;
