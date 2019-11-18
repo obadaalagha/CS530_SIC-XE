@@ -388,7 +388,7 @@ def second_pass(assembly_file):
             elif(mnemonic == "CLEAR"):
                 modifyReg(arg[0], 0);
             elif(mnemonic == "DIVR"):
-                modifyReg(arg[1], (getReg(arg[1]) // getReg(arg[0]));
+                modifyReg(arg[1], (getReg(arg[1]) // getReg(arg[0])));
             elif(mnemonic == "SUBR"):
                 modifyReg(arg[1], (getReg(arg[1]) - getReg(arg[0])));
             elif(mnemonic == "MULR"):
