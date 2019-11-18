@@ -383,6 +383,22 @@ def second_pass(assembly_file):
                 modifyReg('A', (getReg('A') * int(arg)));
             elif(mnemonic == "DIV"):
                 modifyReg('A', (getReg('A') // int(arg)));
+            elif(mnemonic == "ADDR"):
+                modifyReg(arg[1], (getReg(arg[0]) + getReg(arg[1])));
+            elif(mnemonic == "CLEAR"):
+                modifyReg(arg[0], 0);
+            elif(mnemonic == "DIVR"):
+                modifyReg(arg[1], (getReg(arg[1]) // getReg(arg[0]));
+            elif(mnemonic == "SUBR"):
+                modifyReg(arg[1], (getReg(arg[1]) - getReg(arg[0])));
+            elif(mnemonic == "MULR"):
+                modifyReg(arg[1], (getReg(arg[1]) * getReg(arg[0])));
+            elif(mnemonic == "FIX"):
+                modifyReg(A, int(getReg(F)));
+            elif(mnemonic == "FLOAT"):
+                modifyReg(F, float(getReg(A)));
+            elif(mnemonic == "RMO"):
+                modifyReg(arg[1], getReg(arg[0]));
             else:
                 print("We found no mnemonic");
                 continue;
