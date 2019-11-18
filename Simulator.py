@@ -1,3 +1,5 @@
+import random
+
 class StorageObject:
     def __init__(self, trueValue, indexValue, size):
         self.trueValue = trueValue;
@@ -22,20 +24,20 @@ class StorageObject:
 #registers = [A, X, L, B, S, T, float(F), int(PC), str(SW)];
 
 registers = {
-    'A': StorageObject(None, None, None),
-    'X': StorageObject(None, None, None),
-    'L': StorageObject(None, None, None),
-    'B': StorageObject(None, None, None),
-    'S': StorageObject(None, None, None),
-    'T': StorageObject(None, None, None),
+    'A': StorageObject(random.randint(0, 1048576), None, None),
+    'X': StorageObject(random.randint(0, 1048576), None, None),
+    'L': StorageObject(random.randint(0, 1048576), None, None),
+    'B': StorageObject(random.randint(0, 1048576), None, None),
+    'S': StorageObject(random.randint(0, 1048576), None, None),
+    'T': StorageObject(random.randint(0, 1048576), None, None),
     'F': float(0.),
     'PC': -1,
-    'SW': None
+    'SW': random.randint(0, 1048576)
 };
 
 memory = [];
 for i in range(0, 0x1000000):
-    x = StorageObject(None, None, None);
+    x = StorageObject(random.randint(0, 1048576), None, None);
     memory.append(x);
 
 # Operation Code table
@@ -135,9 +137,12 @@ def first_pass(assembly_code):
 
         for line in input:
             # Getting label, mnemonic and arg from each line
-            label = line[0:7].strip();
-            mnemonic = line[9:15].strip();
-            arg = line[17:].strip();
+            label = line[0:7];
+            mnemonic = line[9:15];
+            arg = line[17:];
+            label = label.strip();
+            mnemonic = mnemonic.strip();
+            arg = arg.strip();
 
             line_count += 1;
             # If there is something in label, add it to the SYMTAB
@@ -274,17 +279,63 @@ def second_pass(assembly_file):
 
         for line in input:
             # Getting label, mnemonic and arg from each line
-            label = line[0:7].strip();
-            mnemonic = line[9:15].strip();
-            arg = line[17:].strip();
+            if(len(line) < 17):
+                mode = " ";
+            else:
+                mode = line[16];
+            
+            label = line[0:7];
+            mnemonic = line[9:15];
+            arg = line[17:];
+            label = label.strip();
+            mnemonic = mnemonic.strip();
+            arg = arg.strip();
 
-            if(arg[16] == " "):
-                arg = getMemValue(getLabel(arg, 'Address'));
-            elif(arg[16] == "#"):
+            print(line_count, loc_counter);
+            print(mnemonic, arg);
+
+            if(mode == " "):
+                if(',' not in arg and '+' not in arg and '-' not in arg):
+                    labelName = arg; # For Jumps
+                    arg = getMemValue(getLabel(arg, 'Address'));
+                elif("," in arg):
+                    pos = arg.find(",");
+                    one = arg[0:pos];
+                    two = arg[pos+1:];
+                    arg = (one,two);
+                elif("+" in arg):
+                    pos = arg.find('+');
+                    one = arg[0:pos];
+                    two = arg[pos+1:];
+                    arg = getLabel(one, 'Address') + getLabel(two, 'Address');
+                elif("-" in arg):
+                    pos = arg.find('-');
+                    one = arg[0:pos];
+                    two = arg[pos+1:];
+                    arg = getLabel(one, 'Address') - getLabel(two, 'Address');
+                else:
+                    print('Error 12312');
+            elif(mode == "#"):
                 if(arg not in SYMTAB):
                     arg = int(arg);
+                elif(',' in arg):
+                    pos = arg.find(",");
+                    one = arg[0:pos];
+                    two = arg[pos+1:];
+                    arg = (getLabel(one, 'Address'),two);
                 else:
                     arg = int(getLabel(arg, 'Address'));
+            elif(mode == "@"):
+                if(',' not in arg):
+                    arg = getMemValue(getMemValue(int(arg)));
+                else:
+                    pos = arg.find(",");
+                    one = arg[0:pos];
+                    two = arg[pos+1:];
+                    arg = (getMemValue(getMemValue(one)),two);
+            else:
+                print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
+            '''
             elif("," in arg):
                 pos = arg.find(",");
                 one = arg[0:pos];
@@ -300,10 +351,7 @@ def second_pass(assembly_file):
                 one = arg[0:pos];
                 two = arg[pos+1:];
                 arg = getLabel(one, 'Address') - getLabel(two, 'Address');
-            elif(arg[16] == "@"):
-                arg = getMemValue(getMemValue(int(arg)));
-            else:
-                print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
+            '''
             
             if(mnemonic == "AND"):
                 modifyReg(A, (getReg(A) & arg));
@@ -313,7 +361,31 @@ def second_pass(assembly_file):
                 modifyReg(arg[0], (getReg(arg[0]) << arg[1]));
             elif(mnemonic == "SHIFTR"):
                 modifyReg(arg[0], (getReg(arg[0]) >> arg[1]));
-
+            elif(mnemonic == "ADDF"):
+                modifyReg('F', (getReg('F') + float(arg)));
+            elif(mnemonic == "SUBF"):
+                modifyReg('F', (getReg('F') - float(arg)));
+            elif(mnemonic == "MULF"):
+                modifyReg('F', (getReg('F') * float(arg)));
+            elif(mnemonic == "DIVF"):
+                modifyReg('F', (getReg('F') / float(arg)));
+            elif(mnemonic == "COMPF"):
+                # SKIP FOR NOW BRO
+                print('temp');
+            elif(mnemonic == "NORM"):
+                # SKIP FOR NOW BRO PART 2
+                print('temp');
+            elif(mnemonic == "ADD"):
+                modifyReg('A', (getReg('A') + int(arg)));
+            elif(mnemonic == "SUB"):
+                modifyReg('A', (getReg('A') - int(arg)));
+            elif(mnemonic == "MUL"):
+                modifyReg('A', (getReg('A') * int(arg)));
+            elif(mnemonic == "DIV"):
+                modifyReg('A', (getReg('A') // int(arg)));
+            else:
+                print("We found no mnemonic");
+                continue;
             
             line_count += 1;
             '''
@@ -357,5 +429,9 @@ print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
 
 #def addRegister():
 
-first_pass('SampleCode.txt')
+first_pass('sample2.txt')
+second_pass('sample2.txt')
+
+#first_pass('SampleCode.txt')
+#second_pass('SampleCode.txt')
 
