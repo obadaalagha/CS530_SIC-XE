@@ -37,7 +37,8 @@ registers = {
 
 memory = [];
 for i in range(0, 0x1000000):
-    x = StorageObject(random.randint(0, 1048576), None, None);
+    randInd = random.randint(0, 1048576) & 0xFF;
+    x = StorageObject(None, randInd, None);
     memory.append(x);
 
 # Operation Code table
@@ -171,8 +172,10 @@ def first_pass(assembly_code):
                 elif(mnemonic == 'RESB'):
                     loc_counter += int(arg);
                 elif(mnemonic == 'WORD'):
+                    changeMemory(arg, loc_counter);
                     loc_counter += 3;
                 elif(mnemonic == 'BYTE'):
+                    changeMemory(arg, loc_counter);
                     loc_counter += 1;
                 elif(mnemonic in directives):
                     continue;
@@ -291,8 +294,14 @@ def second_pass(assembly_file):
             mnemonic = mnemonic.strip();
             arg = arg.strip();
 
-            print(line_count, loc_counter);
+            print("%d %X" %(line_count, loc_counter));
             print(mnemonic, arg);
+            if(mnemonic in directives):
+                if(mnemonic in ['RESW', 'RESB', 'WORD', 'BYTE']):
+                    print('END OF COMMANDS');
+                    break;
+                else:
+                    continue;
 
             if(mode == " "):
                 if(',' not in arg and '+' not in arg and '-' not in arg):
@@ -302,7 +311,13 @@ def second_pass(assembly_file):
                     pos = arg.find(",");
                     one = arg[0:pos];
                     two = arg[pos+1:];
-                    arg = (one,two);
+                    if(two.strip() != 'X'):
+                        arg = (one,two);
+                    else:
+                        if(type(one) == int):
+                            arg = one;
+                        else:
+                            arg = getMemValue(getLabel(one, 'Address'));
                 elif("+" in arg):
                     pos = arg.find('+');
                     one = arg[0:pos];
@@ -376,7 +391,12 @@ def second_pass(assembly_file):
                 # SKIP FOR NOW BRO PART 2
                 print('temp');
             elif(mnemonic == "ADD"):
-                modifyReg('A', (getReg('A') + int(arg)));
+                #if(type(arg) == int):
+                modifyReg('A', (int(getReg('A')) + int(arg)));
+                #elif(type(arg) == tuple):
+                #    modifyReg('A', (getReg('A') + int(arg[0])));
+                #else:
+                #    print('Error');
             elif(mnemonic == "SUB"):
                 modifyReg('A', (getReg('A') - int(arg)));
             elif(mnemonic == "MUL"):
@@ -399,6 +419,7 @@ def second_pass(assembly_file):
                 modifyReg(F, float(getReg(A)));
             elif(mnemonic == "RMO"):
                 modifyReg(arg[1], getReg(arg[0]));
+            #elif(mnemonic == ""):
             else:
                 print("We found no mnemonic");
                 continue;
@@ -444,10 +465,10 @@ changeMemory("Obada", 4000);
 print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
 
 #def addRegister():
-
+print('sample2.txt results:');
 first_pass('sample2.txt')
 second_pass('sample2.txt')
-
-#first_pass('SampleCode.txt')
-#second_pass('SampleCode.txt')
+print('SampleCode.txt results:');
+first_pass('SampleCode.txt')
+second_pass('SampleCode.txt')
 
