@@ -6,23 +6,6 @@ class StorageObject:
         self.indexValue = indexValue;
         self.size = size;
 
-
-# Initialize registers
-#registers = np.random.rand(9);
-#registers = registers*(2**20);
-#registers = registers.astype("int32");
-
-# Initialize memory
-#memory = np.random.rand(2**20);
-#memory = memory*(2**20);
-#memory = memory.astype("int32");
-# A X L B S T F PC SW
-#A, X, L, B, S, T = StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None), StorageObject(None, None, None);
-#F = 0.;
-#PC = -1;
-#SW = None;
-#registers = [A, X, L, B, S, T, float(F), int(PC), str(SW)];
-
 registers = {
     'A': StorageObject(random.randint(0, 1048576), None, None),
     'X': StorageObject(random.randint(0, 1048576), None, None),
@@ -35,10 +18,10 @@ registers = {
     'SW': random.randint(0, 1048576)
 };
 
+# Filling up memory
 memory = [];
 for i in range(0, 0x1000000):
-    randInd = random.randint(0, 1048576) & 0xFF;
-    x = StorageObject(None, randInd, None);
+    x = StorageObject(None, (random.randint(0, 1048576) & 0xFF), None);
     memory.append(x);
 
 # Operation Code table
@@ -104,6 +87,7 @@ OpTable = {
     'WD': (0xDC, 3)
 };
 
+# Assembler Directives
 directives = {
     'START': 'START',
     'END': 'END',
@@ -122,18 +106,13 @@ SYMTAB = {};
 locRecord = [];
 
 def first_pass(assembly_code):
-    
     with open(assembly_code) as input:
         line_count = 0
-        # Ivan: Add offset counter
         offset_count = 0
 
         # Reading the first line
         first_line = input.readline();
-
-        # Ivan: Increment offset counter before we strip, becasue strip will get off '\n'
         offset_count += len(first_line)
-
         first_line = first_line.strip();
 
         # Getting program starting address
@@ -146,14 +125,13 @@ def first_pass(assembly_code):
             label = line[0:7];
             mnemonic = line[9:15];
             arg = line[17:];
-            label = label.strip();
-            mnemonic = mnemonic.strip();
-            arg = arg.strip();
+            label = label.rstrip();
+            mnemonic = mnemonic.rstrip();
+            arg = arg.rstrip();
 
             line_count += 1;
 
             # If there is something in label, add it to the SYMTAB
-            # Ivan: Third Value is now offset_count for labels
             if(len(label) > 0):
                 SYMTAB[label] = (loc_counter, line_count, offset_count);
 
@@ -203,6 +181,8 @@ def first_pass(assembly_code):
     return SYMTAB;
 
 def changeMemory(toAdd, address):
+    # Make sure address is in hex
+    address = int(str(address), 16);
     if type(toAdd) == str:
         memory[address].size = len(toAdd) - 1;
         memory[address].trueValue = toAdd;
@@ -249,7 +229,7 @@ def getLabel(label, what):
     elif what == 'Line':
         return SYMTAB[label][1];
     elif what == 'Offset':
-        return SYMTAB[label][2]
+        return SYMTAB[label][2];
     else:
         print('ERROR 3 just for paul');
 
@@ -282,8 +262,8 @@ def getReg(regName):
 def second_pass(assembly_file):
     with open(assembly_file) as input:
         line_count = 0;
-        # Ivan: Modify Reg:'PC'
-        registers['PC'] = locRecord[line_count + 1]
+        modifyReg('PC', locRecord[line_count + 1])
+        #registers['PC'] = locRecord[line_count + 1]
 
 
         # Reading the first line
@@ -293,34 +273,35 @@ def second_pass(assembly_file):
         # Getting program starting address
         start = int(first_line[17:], 16);
 
-        # Ivan: Don't think we need loc_counter in second pass.
-        # loc_counter = start;
         line_count += 1;
-        registers['PC'] = locRecord[line_count + 1]
+        modifyReg('PC', locRecord[line_count + 1])
+        #registers['PC'] = locRecord[line_count + 1]
 
         for line in input:
             # Getting label, mnemonic and arg from each line
-            if(len(line) < 17):
-                mode = " ";
-            else:
-                mode = line[16];
-            
             label = line[0:7];
             mnemonic = line[9:15];
             arg = line[17:];
-            label = label.strip();
-            mnemonic = mnemonic.strip();
-            arg = arg.strip();
+            label = label.rstrip();
+            mnemonic = mnemonic.rstrip();
+            arg = arg.rstrip();
 
+            # If there are no arguments, go to a different case
+            if(len(line) < 17):
+                mode = "NOARG";
+            else:
+                mode = line[16];
+            
             # print("%d %X" %(line_count, loc_counter));
-            print(mnemonic, arg);
+            # Once you hit an assembler directive, make sure the assembler doesn't break down
             if(mnemonic in directives):
                 if(mnemonic in ['RESW', 'RESB', 'WORD', 'BYTE']):
                     print('END OF COMMANDS');
                     break;
                 else:
                     continue;
-
+            
+            print(mnemonic, arg);
             if(mode == " "):
                 if(',' not in arg and '+' not in arg and '-' not in arg):
                     labelName = arg; # For Jumps
@@ -329,7 +310,7 @@ def second_pass(assembly_file):
                     pos = arg.find(",");
                     one = arg[0:pos];
                     two = arg[pos+1:];
-                    if(two.strip() != 'X'):
+                    if(two != 'X'):
                         arg = (one,two);
                     else:
                         if(type(one) == int):
@@ -358,6 +339,9 @@ def second_pass(assembly_file):
                     arg = (getLabel(one, 'Address'),two);
                 else:
                     arg = int(getLabel(arg, 'Address'));
+            elif(mode == "NOARG"):
+                if(mnemonic == "RSUB"):
+                    modifyReg('PC', getReg('L'));
             elif(mode == "@"):
                 if(',' not in arg):
                     arg = getMemValue(getMemValue(int(arg)));
@@ -368,28 +352,11 @@ def second_pass(assembly_file):
                     arg = (getMemValue(getMemValue(one)),two);
             else:
                 print("NADA NOT CORRECT YOU'VE GOT AN ERROR");
-            '''
-            elif("," in arg):
-                pos = arg.find(",");
-                one = arg[0:pos];
-                two = arg[pos+1:];
-                arg = (one,two);
-            elif("+" in arg):
-                pos = arg.find('+');
-                one = arg[0:pos];
-                two = arg[pos+1:];
-                arg = getLabel(one, 'Address') + getLabel(two, 'Address');
-            elif("-" in arg):
-                pos = arg.find('-');
-                one = arg[0:pos];
-                two = arg[pos+1:];
-                arg = getLabel(one, 'Address') - getLabel(two, 'Address');
-            '''
             
             if(mnemonic == "AND"):
-                modifyReg(A, (getReg(A) & arg));
+                modifyReg('A', (getReg('A') & arg));
             elif(mnemonic == "OR"):
-                modifyReg(A, (getReg(A) | arg));
+                modifyReg('A', (getReg('A') | arg));
             elif(mnemonic == "SHIFTL"):
                 modifyReg(arg[0], (getReg(arg[0]) << arg[1]));
             elif(mnemonic == "SHIFTR"):
@@ -409,12 +376,7 @@ def second_pass(assembly_file):
                 # SKIP FOR NOW BRO PART 2
                 print('temp');
             elif(mnemonic == "ADD"):
-                #if(type(arg) == int):
-                modifyReg('A', (int(getReg('A')) + int(arg)));
-                #elif(type(arg) == tuple):
-                #    modifyReg('A', (getReg('A') + int(arg[0])));
-                #else:
-                #    print('Error');
+                modifyReg('A', (getReg('A') + int(arg)));
             elif(mnemonic == "SUB"):
                 modifyReg('A', (getReg('A') - int(arg)));
             elif(mnemonic == "MUL"):
@@ -432,64 +394,76 @@ def second_pass(assembly_file):
             elif(mnemonic == "MULR"):
                 modifyReg(arg[1], (getReg(arg[1]) * getReg(arg[0])));
             elif(mnemonic == "FIX"):
-                modifyReg(A, int(getReg(F)));
+                modifyReg('A', int(getReg('F')));
             elif(mnemonic == "FLOAT"):
-                modifyReg(F, float(getReg(A)));
+                modifyReg('F', float(getReg('A')));
             elif(mnemonic == "RMO"):
                 modifyReg(arg[1], getReg(arg[0]));
-            #elif(mnemonic == ""):
-
-            # Ivan: Operation: J
             elif(mnemonic == "J"):
-                line_to_jump = getLabel(labelName, 'Line')
-                offset = getLabel(labelName, 'Offset')
-                input.seek(offset, 0)
-                line_count = line_to_jump
-                registers['PC'] = locRecord[line_count + 1]
-
+                line_to_jump = getLabel(labelName, 'Line');
+                offset = getLabel(labelName, 'Offset');
+                input.seek(offset, 0);
+                line_count = line_to_jump - 1;
+            elif(mnemonic == "LDA"):
+                modifyReg('A', arg);
+            elif(mnemonic == "LDB"):
+                modifyReg('B', arg);
+            elif(mnemonic == "LDCH"):
+                if(arg[:4] == "CHAR"):
+                    modifyReg('A', arg[4]);
+                elif(type(arg) == int):
+                    modifyReg('A', (arg & 0xF));
+                elif(type(arg) == str):
+                    modifyReg('A', getLabel(arg, 'Address'));
+                else:
+                    print("Error: No single readable character to print");
+                modifyReg('A', arg);
+            elif(mnemonic == "LDF"):
+                modifyReg('F', arg);
+            elif(mnemonic == "LDL"):
+                modifyReg('L', arg);
+            elif(mnemonic == "LDS"):
+                modifyReg('S', arg);
+            elif(mnemonic == "LDT"):
+                modifyReg('T', arg);
+            elif(mnemonic == "LDX"):
+                modifyReg('X', arg);
+            elif(mnemonic == "STA"):
+                #print("Arg: %s" %arg)
+                #print("Address in Memory: %X, Value in Register: %d" %getLabel(arg, 'Address'), getReg('A'));
+                changeMemory(getReg('A'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STB"):
+                changeMemory(getReg('B'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STCH"):
+                if(arg[:4] == "CHAR"):
+                    changeMemory(getReg('A'), arg[4]);
+                elif(type(arg) == int):
+                    changeMemory(getReg('A'), (arg & 0xF));
+                elif(type(arg) == str):
+                    changeMemory(getReg('A'), getLabel(labelName, 'Address'));
+                else:
+                    print("Error: No single readable character");
+            elif(mnemonic == "STF"):
+                changeMemory(getReg('F'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STL"):
+                changeMemory(getReg('L'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STS"):
+                changeMemory(getReg('S'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STSW"):
+                changeMemory(getReg('SW'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STT"):
+                changeMemory(getReg('T'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "STX"):
+                changeMemory(getReg('X'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "RSUB"):
+                continue;
             else:
                 print("We found no mnemonic");
                 continue;
-            
-            
-            # Ivan: Last line to increment line_count
+             
             line_count += 1;
-            # Ivan: Reg:'PC' increment along with line_count
-            registers['PC'] = locRecord[line_count + 1]
-            '''
-            # If there is something in label, add it to the SYMTAB
-            if(len(label) > 0):
-                SYMTAB[label] = loc_counter;
-
-            plus = False;
-            if(line[8] == "+"):
-                plus = True;
-            if(mnemonic in OpTable):
-                if(OpTable[mnemonic][1] > 2):
-                    if(plus == True):
-                        loc_counter += 4;
-                    else:
-                        loc_counter += 3;
-                elif((OpTable[mnemonic][1] == 2) and (plus == False)):
-                    loc_counter += 2;
-                elif((OpTable[mnemonic][1] == 1) and (plus == False)):
-                    loc_counter += 1;
-            elif (mnemonic in directives):
-                if(mnemonic == 'RESW'):
-                    loc_counter += int(arg) * 3;
-                elif(mnemonic == 'RESB'):
-                    loc_counter += int(arg);
-                elif(mnemonic == 'WORD'):
-                    loc_counter += 3;
-                elif(mnemonic == 'BYTE'):
-                    loc_counter += 1;
-                elif(mnemonic in directives):
-                    continue;
-                elif(directives[mnemonic] == 'END'):
-                    break;
-            else:
-                print("Error");
-    '''
+            modifyReg('PC', locRecord[line_count + 1])
+    # END SECOND PASS
 
 
 changeMemory("Obada", 4000);
@@ -501,7 +475,6 @@ first_pass('sample2.txt')
 for i in range(3):
     print(SYMTAB)
 second_pass('sample2.txt')
-# print('SampleCode.txt results:');
-# first_pass('SampleCode.txt')
-# second_pass('SampleCode.txt')
-
+print('SampleCode.txt results:');
+first_pass('SampleCode.txt')
+second_pass('SampleCode.txt')
