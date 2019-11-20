@@ -1,0 +1,6 @@
+SUM      START   4000
+FIRST    ADD    #0
+         ADD     COUNT
+COUNT    RESW    1
+TABLE    RESW    2000
+         END     FIRST
