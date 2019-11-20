@@ -305,6 +305,9 @@ def second_pass(assembly_file):
             if(mode == " "):
                 if(',' not in arg and '+' not in arg and '-' not in arg):
                     labelName = arg; # For Jumps
+                    # FIXME : Figure out a way to have arg represent all cases we need, instead of having labelName & arg.
+                    # This could just be leaving arg be. Do NOT use continue, that will force the loop to go to the next line.
+                    # You could also possibly add another index in the OpTable Value Tuple, but leave that as a last resort.
                     arg = getMemValue(getLabel(arg, 'Address'));
                 elif("," in arg):
                     pos = arg.find(",");
@@ -340,7 +343,11 @@ def second_pass(assembly_file):
                 else:
                     arg = int(getLabel(arg, 'Address'));
             elif(mode == "NOARG"):
-                if(mnemonic == "RSUB"):
+                if(mnemonic == "JSUB"):
+                    # PC into L, arg into PC
+                    modifyReg('L', getReg('PC'));
+                    modifyReg('PC', getLabel(arg, 'Address'));
+                elif(mnemonic == "RSUB"):
                     modifyReg('PC', getReg('L'));
             elif(mode == "@"):
                 if(',' not in arg):
@@ -429,8 +436,6 @@ def second_pass(assembly_file):
             elif(mnemonic == "LDX"):
                 modifyReg('X', arg);
             elif(mnemonic == "STA"):
-                #print("Arg: %s" %arg)
-                #print("Address in Memory: %X, Value in Register: %d" %getLabel(arg, 'Address'), getReg('A'));
                 changeMemory(getReg('A'), getLabel(labelName, 'Address'));
             elif(mnemonic == "STB"):
                 changeMemory(getReg('B'), getLabel(labelName, 'Address'));
@@ -455,6 +460,8 @@ def second_pass(assembly_file):
                 changeMemory(getReg('T'), getLabel(labelName, 'Address'));
             elif(mnemonic == "STX"):
                 changeMemory(getReg('X'), getLabel(labelName, 'Address'));
+            elif(mnemonic == "JSUB"):
+                continue;
             elif(mnemonic == "RSUB"):
                 continue;
             else:
