@@ -122,18 +122,23 @@ SYMTAB = {};
 locRecord = [];
 
 def first_pass(assembly_code):
-    #line_count = 1;
+    
     with open(assembly_code) as input:
-        line_count = 0;
+        line_count = 0
+        # Ivan: Add offset counter
+        offset_count = 0
+
         # Reading the first line
         first_line = input.readline();
+
+        # Ivan: Increment offset counter before we strip, becasue strip will get off '\n'
+        offset_count += len(first_line)
+
         first_line = first_line.strip();
-        #line_count = 0;
 
         # Getting program starting address
         start = int(first_line[17:], 16);
         loc_counter = start;
-        #line_count += 1;
         locRecord.append(loc_counter);
 
         for line in input:
@@ -146,15 +151,19 @@ def first_pass(assembly_code):
             arg = arg.strip();
 
             line_count += 1;
-            # If there is something in label, add it to the SYMTAB
-            if(len(label) > 0):
-                SYMTAB[label] = (loc_counter, line_count);
 
-            #line_count = 0;
+            # If there is something in label, add it to the SYMTAB
+            # Ivan: Third Value is now offset_count for labels
+            if(len(label) > 0):
+                SYMTAB[label] = (loc_counter, line_count, offset_count);
+
+            # Ivan: Increment offset counter, ready for next line
+            offset_count += len(line)
 
             plus = False;
             if(line[8] == "+"):
                 plus = True;
+
             locRecord.append(loc_counter);
             if(mnemonic in OpTable):
                 if(OpTable[mnemonic][1] > 2):
@@ -187,7 +196,7 @@ def first_pass(assembly_code):
     # TESTING PURPOSES
     print("SYMTAB");
     for key,value in SYMTAB.items():
-        print("%-6s, 0x%X, %d" %(key, value[0], value[1]));
+        print("%-6s, 0x%X, %d, %d" %(key, value[0], value[1], value[2]));
     for locs in locRecord:
         print("%X" %locs);
 
@@ -239,6 +248,8 @@ def getLabel(label, what):
         return SYMTAB[label][0];
     elif what == 'Line':
         return SYMTAB[label][1];
+    elif what == 'Offset':
+        return SYMTAB[label][2]
     else:
         print('ERROR 3 just for paul');
 
@@ -271,14 +282,21 @@ def getReg(regName):
 def second_pass(assembly_file):
     with open(assembly_file) as input:
         line_count = 0;
+        # Ivan: Modify Reg:'PC'
+        registers['PC'] = locRecord[line_count + 1]
+
+
         # Reading the first line
         first_line = input.readline();
         first_line = first_line.strip();
 
         # Getting program starting address
         start = int(first_line[17:], 16);
-        loc_counter = start;
+
+        # Ivan: Don't think we need loc_counter in second pass.
+        # loc_counter = start;
         line_count += 1;
+        registers['PC'] = locRecord[line_count + 1]
 
         for line in input:
             # Getting label, mnemonic and arg from each line
@@ -294,7 +312,7 @@ def second_pass(assembly_file):
             mnemonic = mnemonic.strip();
             arg = arg.strip();
 
-            print("%d %X" %(line_count, loc_counter));
+            # print("%d %X" %(line_count, loc_counter));
             print(mnemonic, arg);
             if(mnemonic in directives):
                 if(mnemonic in ['RESW', 'RESB', 'WORD', 'BYTE']):
@@ -420,11 +438,24 @@ def second_pass(assembly_file):
             elif(mnemonic == "RMO"):
                 modifyReg(arg[1], getReg(arg[0]));
             #elif(mnemonic == ""):
+
+            # Ivan: Operation: J
+            elif(mnemonic == "J"):
+                line_to_jump = getLabel(labelName, 'Line')
+                offset = getLabel(labelName, 'Offset')
+                input.seek(offset, 0)
+                line_count = line_to_jump
+                registers['PC'] = locRecord[line_count + 1]
+
             else:
                 print("We found no mnemonic");
                 continue;
             
+            
+            # Ivan: Last line to increment line_count
             line_count += 1;
+            # Ivan: Reg:'PC' increment along with line_count
+            registers['PC'] = locRecord[line_count + 1]
             '''
             # If there is something in label, add it to the SYMTAB
             if(len(label) > 0):
@@ -467,8 +498,10 @@ print(memory[4000].trueValue, memory[4000].indexValue, memory[4000].size);
 #def addRegister():
 print('sample2.txt results:');
 first_pass('sample2.txt')
+for i in range(3):
+    print(SYMTAB)
 second_pass('sample2.txt')
-print('SampleCode.txt results:');
-first_pass('SampleCode.txt')
-second_pass('SampleCode.txt')
+# print('SampleCode.txt results:');
+# first_pass('SampleCode.txt')
+# second_pass('SampleCode.txt')
 
