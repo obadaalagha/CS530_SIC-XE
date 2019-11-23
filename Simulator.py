@@ -28,7 +28,7 @@ print("Please wait while the system intializes...");
 memory = [];
 #init_counter = 0;
 for i in range(0, 0x1000000):
-    x = StorageObject(None, (random.randint(0, 0x1000000) & 0xFF));
+    x = StorageObject(None, (random.randint(0, 0x1000000) & 0x0000FF));
     memory.append(x);
     #percentage = 0;
     #if(init_counter in percentList):
@@ -302,7 +302,6 @@ def second_pass(assembly_file):
             # Once you hit an assembler directive, make sure the assembler doesn't break down
             if(mnemonic in directives):
                 if(mnemonic in ['RESW', 'RESB', 'WORD', 'BYTE']):
-                    print('END OF COMMANDS');
                     break;
                 else:
                     continue;
@@ -552,11 +551,19 @@ def second_pass(assembly_file):
             modifyReg('PC', locRecord[line_count + 1])
     # END SECOND PASS
 
-fileName = input("Please type a file name (.txt or .sic) to assemble: ");
-fileName = fileName.strip();
+while(True):
+    fileName = input("Please type a file name (.txt or .sic) to assemble: ");
+    fileName = fileName.strip();
+    try:
+        abc = open(fileName);
+        abc.close();
+        break;
+    except:
+        print("File does not exist. Please use a file that exists.\n");
+
 ext = fileName.split(".");
 if(ext[len(ext)-1] == "txt" or ext[len(ext)-1] == "sic"):
-    print("USE INSTRUCTIONS:\n- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n- Type <CHR> [CONTENT] [REGISTER NAME] [DATA TYPE] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change. [TYPE] indicates the data type to store.\nNOTE: Register F only takes in floating point values. All other registers take in integers or strings, stored as 24 bits. This allows 16,777,200 integer values or 3 ASCII characters.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
+    print("USE INSTRUCTIONS:\n- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change. [TYPE] indicates the data type to store.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
     # FIXME MAYBE: THINK ABOUT INDIVIDUAL LINE INSTRUCTIONS?
 else:
     print("ERROR: Invalid file.\n");
@@ -564,15 +571,69 @@ else:
 
 condition = True;
 while(condition == True):
-    cmd = input("user@SIC/XE: ")
+    cmd = input("user@SIC/XE: ");
     if(cmd[0:3].upper() == "1ST"):
-        print("Starting first pass...", end="");
-        first_pass(fileName);
-        print("first pass completed.\n");
+        if((len(cmd) == 4) and (cmd[3] != " ")):
+            print("Invalid command. Type HELP for help.\n");
+        else:
+            print("Starting first pass...", end="");
+            first_pass(fileName);
+            print("first pass completed.\n");
     elif(cmd[0:3].upper() == "2ND"):
-        second_pass(fileName);
+        if((len(cmd) == 4) and (cmd[3] != " ")):
+            print("Invalid command. Type HELP for help.\n");
+        else:
+            print("Starting second pass...", end="");
+            second_pass(fileName);
+            print("second pass completed.\n");
     elif(cmd[0:3].upper() == "MEM"):
-        print('temp\n');
+        cmd = cmd.split(' ');
+        if(len(cmd) == 4):
+            if(cmd[3].upper() == "10" or cmd[3].upper() == "DEC" or cmd[3].upper() == "DECIMAL"):
+                start = int(cmd[1]);
+                end = int(cmd[2]) + 1;
+                index = start;
+                print('[', end="")
+                while (index < end):
+                    print(" %2X " %(memory[index].indexValue), end="");
+                    index += 1;
+                    if(index % 30 == 0):
+                        print(']')
+                        print('[', end="")
+                print(']')
+                #print(memory[start:end].indexValue);
+                #print("[", end="");
+                #for i in memory[start:end]:
+                #    for j in range(0, 6):
+                #        print(" %X " %(i.indexValue), end="");
+                #    print("]");
+                #    if(i != end):
+                #        print("[", end="");
+                #print()
+            elif(cmd[3].upper() == "16" or cmd[3].upper() == "HEX" or cmd[3].upper() == "HEXADECIMAL"):
+                start = int(cmd[1], 16);
+                end = int(cmd[2], 16) + 1;
+                index = start;
+                print('[', end="")
+                while (index < end):
+                    print(" %2X " %(memory[index].indexValue), end="");
+                    index += 1;
+                    if(index % 30 == 0):
+                        print(']')
+                        print('[', end="")
+                print(']')
+                #print(memory[start:end].indexValue);
+                #print("[", end="");
+                ##for i in memory[start:end]:
+                #    for j in range(0, 6):
+                ##        print(" %X " %(i.indexValue), end="");
+                #    print("]");
+                #    print("[", end="");
+                #print()
+            else:
+                print("Improper format. Command usage: MEM [START] [END] [ADDRESS TYPE]");
+        else:
+            print("Improper format. Command usage: MEM [START] [END] [ADDRESS TYPE]");
         #cmd = cmd.split(' ');
         #cmd[1] = #start index
         #cmd[2] = #end index
@@ -580,20 +641,32 @@ while(condition == True):
     elif(cmd[0:3].upper() == "REG"):
         # DISPLAY REGISTERS
         regNames = ['A', 'X', 'L', 'B', 'S', 'T', 'F', 'PC', 'SW'];
-        for j in range(0, 9):
-            if(regNames[j] != 'F'):
-                print("Register %s's value is: 0x%X" %(regNames[j], getReg(regNames[j])));
-            else:
-                print("Register %s's value is: %.4f" %(regNames[j], getReg(regNames[j])));
+        if((len(cmd) == 4) and (cmd[3] != " ")):
+            print("Invalid command. Type HELP for help.\n");
+        else:
+            print(" REGISTER |  VALUE")
+            for j in range(0, 9):
+                if(regNames[j] != 'F' and regNames[j] != 'PC' and regNames[j] != 'SW'):
+                    print("   (%s)    | 0x%X" %(regNames[j], getReg(regNames[j])));
+                elif(regNames[j] == 'PC' or regNames[j] == "SW"):
+                    print("   (%s)   | 0x%X" %(regNames[j], getReg(regNames[j])));
+                else:
+                    print("   (%s)    | %.4f" %(regNames[j], getReg(regNames[j])));
         print()
     elif(cmd[0:3].upper() == "SYM"):
         # DISPLAY SYMTAB
-        for key,value in SYMTAB.items():
-            print("%-6s, 0x%X" %(key, value[0]));
+        if((len(cmd) == 4) and (cmd[3] != " ")):
+            print("Invalid command. Type HELP for help.\n");
+        else:
+            print(" SYMBOL |  TABLE ");
+            for key,value in SYMTAB.items():
+                print(" %-6s | 0x%X" %(key, value[0]));
     elif(cmd[0:3].upper() == "CHM"):
         # CHANGE MEMORY
+        #if((len(cmd) == 4) and (cmd[3] != " ")):
+        #    print("Invalid command. Type HELP for help.\n");
         cmd = cmd.split(' ');
-        if(len(cmd) < 2):
+        if(len(cmd) == 5):
             if(cmd[4] == "10" or cmd[4].upper() == "DEC" or cmd[4].upper() == "DECIMAL"):
                 if(cmd[3].upper() == "STR" or cmd[3].upper() == "STRING"):
                     changeMemory(str(cmd[1]), int(cmd[2]));
@@ -612,18 +685,21 @@ while(condition == True):
             print("Improper format. Command usage: CHM [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE]\n");
     elif(cmd[0:3].upper() == "CHR"):
         # CHANGE REGISTERS
+        #if((len(cmd) == 4) and (cmd[3] != " ")):
+        #    print("Invalid command. Type HELP for help.\n");
         cmd = cmd.split(' ');
-        if(cmd[3].upper() == "STR" or cmd[3].upper == "STRING"):
-            modifyReg(cmd[2], str(cmd[1]));
-        elif(cmd[3].upper() == "INT" or cmd[3].upper == "INTEGER"):
-            modifyReg(cmd[2], int(cmd[1]));
-        elif(cmdp[3].upper() == "FLOAT"):
-            modifyReg('F', float(cmd[1]));
+        if(len(cmd) == 3):
+            if(cmd[3].upper() == "INT" or cmd[3].upper == "INTEGER"):
+                modifyReg(cmd[2], int(cmd[1]));
+            elif(cmd[3].upper() == "FLOAT"):
+                modifyReg('F', float(cmd[1]));
+            else:
+                print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME]\n");
         else:
-            print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME] [DATA TYPE]\n");
+            print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME]\n");
     elif(cmd.upper() == "HELP"):
         # USER HELP
-        print("- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n- Type <CHR> [CONTENT] [REGISTER NAME] [DATA TYPE] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change. [TYPE] indicates the data type to store.\nNOTE: Register F only takes in floating point values. All other registers take in integers or strings, stored as 24 bits. This allows 16,777,200 integer values or 3 ASCII characters.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
+        print("- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
     elif(cmd.upper() == "EXIT"):
         # EXIT
         sure = input("Are you sure? [Y/N]\n");
@@ -635,15 +711,3 @@ while(condition == True):
             print("Please specify YES or NO.");
     else:
         print("Please input a valid command! Type HELP for help.\n");
-
-#print('SYMTAB')
-#for key,value in SYMTAB.items():
-#    print("%-6s, 0x%X" %(key, value[0]))
-
-#def addRegister():
-#print('sample2.txt results:');
-#first_pass('sample2.txt')
-#second_pass('sample2.txt')
-#print('SampleCode.txt results:');
-#first_pass('SampleCode.txt')
-#second_pass('SampleCode.txt')
