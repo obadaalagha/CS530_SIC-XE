@@ -553,7 +553,7 @@ while(True):
 
 ext = fileName.split(".");
 if(ext[len(ext)-1] == "txt" or ext[len(ext)-1] == "sic"):
-    print("USE INSTRUCTIONS:\n- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change. [TYPE] indicates the data type to store.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
+    print("USE INSTRUCTIONS:\n- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] [DATA TYPE] to change a register, where [CONTENT] is the content you want to change, [REGISTER NAME] is the register to change, and [DATA TYPE] is an integer or float.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
     # FIXME MAYBE: THINK ABOUT INDIVIDUAL LINE INSTRUCTIONS?
 else:
     print("ERROR: Invalid file.\n");
@@ -570,7 +570,9 @@ while(condition == True):
             first_pass(fileName);
             print("first pass completed.\n");
     elif(cmd[0:3].upper() == "2ND"):
-        if((len(cmd) == 4) and (cmd[3] != " ")):
+        if(len(SYMTAB) == 0):
+            print("Please run the first pass before running the second pass.");
+        elif((len(cmd) == 4) and (cmd[3] != " ")):
             print("Invalid command. Type HELP for help.\n");
         else:
             print("Starting second pass...");
@@ -655,18 +657,18 @@ while(condition == True):
     elif(cmd[0:3].upper() == "CHR"):
         # CHANGE REGISTERS
         cmd = cmd.split(' ');
-        if(len(cmd) == 3):
-            if(cmd[2].upper() == "INT" or cmd[2].upper == "INTEGER"):
+        if(len(cmd) == 4):
+            if(cmd[3].upper() == "INT" or cmd[3].upper == "INTEGER"):
                 modifyReg(cmd[2], int(cmd[1]));
-            elif(cmd[2].upper() == "FLOAT" or cmd[2].upper() == "F"):
+            elif(cmd[3].upper() == "FLOAT" or cmd[3].upper() == "F"):
                 modifyReg('F', float(cmd[1]));
             else:
-                print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME]\n");
+                print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME] [DATA TYPE]\n");
         else:
-            print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME]\n");
+            print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME] [DATA TYPE]\n");
     elif(cmd.upper() == "HELP"):
         # USER HELP
-        print("- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] to change a register, where [CONTENT] is the content you want to change and [REGNAME] is the register to change.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
+        print("- Type <1ST> to run the assembler's first pass.\n- Type <2ND> to run the assembler's second pass.\n- Type <REG> to display the registers and their values.\n- Type <SYM> to display the Symbol Table. The Symbol Table will only be displayed after the first pass.\n\n- Type <MEM> [START] [END] [ADDRESS TYPE] to display memory, where [START] indicates your starting address, [END] indicates your ending address, and [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\n\n- Type <CHM> [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE] to change a memory address, where content is the content you want to change and address is the beginning address to change your content. [DATA TYPE] indicates the data type to input, string or integer. [ADDRESS TYPE] indicates base 10 or 16 numbering for addressing.\nNOTE: a string will overflow into the next address if it does not fit into the current one; integers will not overflow.\n\n- Type <CHR> [CONTENT] [REGISTER NAME] [DATA TYPE] to change a register, where [CONTENT] is the content you want to change, [REGISTER NAME] is the register to change, and [DATA TYPE] is an integer or float.\nNOTE: Register F only takes in floating point values. All other registers take in 3 byte integers. This allows 16,777,200 integer values.\n\n- Type <HELP> for help.\n- Type <EXIT> to exit.\n\n");
     elif(cmd.upper() == "EXIT"):
         # EXIT
         sure = input("Are you sure? [Y/N]\n");
