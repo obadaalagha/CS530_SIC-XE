@@ -1,5 +1,4 @@
 import random
-import sys
 
 print("WELCOME TO THE SIC/XE SIMULATOR WRITTEN BY OBADA ALAGHA, IN SAN CHAK, AND PAUL MAURO.");
 
@@ -20,22 +19,12 @@ registers = {
     'SW': random.randint(0, 0x1000000)
 };
 
-#percentList = []
-#for i in range(0, 100):
-#    percentList.append(167772 * (i + 1));
 print("Please wait while the system intializes...");
 # Filling up memory
 memory = [];
-#init_counter = 0;
 for i in range(0, 0x1000000):
     x = StorageObject(None, (random.randint(0, 0x1000000) & 0x0000FF));
     memory.append(x);
-    #percentage = 0;
-    #if(init_counter in percentList):
-    #    percentage = [x for x in percentList[x]];
-    #print("Memory is being initialized. Please wait...")#, #end="");
-    #sys.stdout.write(str(percentage) + '%\r')
-    #init_counter += 1;
 print("System initialization complete.\n");
 
 # Operation Code table
@@ -288,8 +277,8 @@ def second_pass(assembly_file):
         input("Press any key to continue to the next step...");
 
         for line in asm:
-            print(line);
-            input("Press any key to continue to the next step...");
+            print(line, end="");
+            input("");
             # Getting label, mnemonic and arg from each line
             label = line[0:7];
             mnemonic = line[9:15];
@@ -311,13 +300,9 @@ def second_pass(assembly_file):
                 else:
                     continue;
             
-            #print(mnemonic, arg, getReg('X'), getMemValue(0x401A));
             if(mode == " "):
                 if(',' not in arg and '+' not in arg and '-' not in arg):
                     labelName = arg; # For Jumps
-                    # FIXME : Figure out a way to have arg represent all cases we need, instead of having labelName & arg.
-                    # This could just be leaving arg be. Do NOT use continue, that will force the loop to go to the next line.
-                    # You could also possibly add another index in the OpTable Value Tuple, but leave that as a last resort.
                     arg = getMemValue(getLabel(arg, 'Address'));
                 elif("," in arg):
                     pos = arg.find(",");
@@ -450,13 +435,13 @@ def second_pass(assembly_file):
             elif(mnemonic == "J"):
                 line_to_jump = getLabel(labelName, 'Line');
                 offset = getLabel(labelName, 'Offset');
-                input.seek(offset, 0);
+                asm.seek(offset, 0);
                 line_count = line_to_jump - 1;
             elif(mnemonic == "JEQ"):
                 if(getReg('SW') == 0):
                     line_to_jump = getLabel(labelName, 'Line');
                     offset = getLabel(labelName, 'Offset');
-                    input.seek(offset, 0);
+                    asm.seek(offset, 0);
                     line_count = line_to_jump - 1;
                 else:
                     continue;
@@ -464,7 +449,7 @@ def second_pass(assembly_file):
                 if(getReg('SW') == 1):
                     line_to_jump = getLabel(labelName, 'Line');
                     offset = getLabel(labelName, 'Offset');
-                    input.seek(offset, 0);
+                    asm.seek(offset, 0);
                     line_count = line_to_jump - 1;
                 else:
                     continue;
@@ -472,7 +457,7 @@ def second_pass(assembly_file):
                 if(getReg('SW') == 2):
                     line_to_jump = getLabel(labelName, 'Line');
                     offset = getLabel(labelName, 'Offset');
-                    input.seek(offset, 0);
+                    asm.seek(offset, 0);
                     line_count = line_to_jump - 1;
                 else:
                     continue;
@@ -588,9 +573,9 @@ while(condition == True):
         if((len(cmd) == 4) and (cmd[3] != " ")):
             print("Invalid command. Type HELP for help.\n");
         else:
-            print("Starting second pass...", end="");
+            print("Starting second pass...");
             second_pass(fileName);
-            print("second pass completed.\n");
+            print("Second pass completed.\n");
     elif(cmd[0:3].upper() == "MEM"):
         cmd = cmd.split(' ');
         if(len(cmd) == 4):
@@ -606,15 +591,6 @@ while(condition == True):
                         print(']')
                         print('[', end="")
                 print(']')
-                #print(memory[start:end].indexValue);
-                #print("[", end="");
-                #for i in memory[start:end]:
-                #    for j in range(0, 6):
-                #        print(" %X " %(i.indexValue), end="");
-                #    print("]");
-                #    if(i != end):
-                #        print("[", end="");
-                #print()
             elif(cmd[3].upper() == "16" or cmd[3].upper() == "HEX" or cmd[3].upper() == "HEXADECIMAL"):
                 start = int(cmd[1], 16);
                 end = int(cmd[2], 16) + 1;
@@ -627,22 +603,10 @@ while(condition == True):
                         print(']')
                         print('[', end="")
                 print(']')
-                #print(memory[start:end].indexValue);
-                #print("[", end="");
-                ##for i in memory[start:end]:
-                #    for j in range(0, 6):
-                ##        print(" %X " %(i.indexValue), end="");
-                #    print("]");
-                #    print("[", end="");
-                #print()
             else:
                 print("Improper format. Command usage: MEM [START] [END] [ADDRESS TYPE]");
         else:
             print("Improper format. Command usage: MEM [START] [END] [ADDRESS TYPE]");
-        #cmd = cmd.split(' ');
-        #cmd[1] = #start index
-        #cmd[2] = #end index
-        #cmd[3] = #mode
     elif(cmd[0:3].upper() == "REG"):
         # DISPLAY REGISTERS
         regNames = ['A', 'X', 'L', 'B', 'S', 'T', 'F', 'PC', 'SW'];
@@ -690,13 +654,11 @@ while(condition == True):
             print("Improper format. Command usage: CHM [CONTENT] [ADDRESS] [DATA TYPE] [ADDRESS TYPE]\n");
     elif(cmd[0:3].upper() == "CHR"):
         # CHANGE REGISTERS
-        #if((len(cmd) == 4) and (cmd[3] != " ")):
-        #    print("Invalid command. Type HELP for help.\n");
         cmd = cmd.split(' ');
         if(len(cmd) == 3):
-            if(cmd[3].upper() == "INT" or cmd[3].upper == "INTEGER"):
+            if(cmd[2].upper() == "INT" or cmd[2].upper == "INTEGER"):
                 modifyReg(cmd[2], int(cmd[1]));
-            elif(cmd[3].upper() == "FLOAT"):
+            elif(cmd[2].upper() == "FLOAT" or cmd[2].upper() == "F"):
                 modifyReg('F', float(cmd[1]));
             else:
                 print("Improper format. Command usage: CHR [CONTENT] [REGISTER NAME]\n");
