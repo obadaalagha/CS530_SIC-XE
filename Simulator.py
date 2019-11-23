@@ -270,12 +270,12 @@ def getReg(regName):
         print("ERROR: Not a valid register name.");
 
 def second_pass(assembly_file):
-    with open(assembly_file) as input:
+    with open(assembly_file) as asm:
         line_count = 0;
         modifyReg('PC', locRecord[line_count + 1])
 
         # Reading the first line
-        first_line = input.readline();
+        first_line = asm.readline();
         first_line = first_line.strip();
 
         # Getting program starting address
@@ -284,7 +284,12 @@ def second_pass(assembly_file):
         line_count += 1;
         modifyReg('PC', locRecord[line_count + 1])
 
-        for line in input:
+        print(first_line);
+        input("Press any key to continue to the next step...");
+
+        for line in asm:
+            print(line);
+            input("Press any key to continue to the next step...");
             # Getting label, mnemonic and arg from each line
             label = line[0:7];
             mnemonic = line[9:15];
