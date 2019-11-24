@@ -193,12 +193,12 @@ def changeMemory(toAdd, address):
             memory[address].indexValue = (toAdd & 0x0000FF);
         elif(toAdd < 0x10000):
             memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0x00FF00);
+            memory[address].indexValue = int((toAdd & 0x00FF00) / 0x100);
             memory[address+1].indexValue = (toAdd & 0x0000FF);
         elif(toAdd < 0x1000000):
             memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0xFF0000);
-            memory[address+1].indexValue = (toAdd & 0x00FF00);
+            memory[address].indexValue = int((toAdd & 0xFF0000) / 0x10000);
+            memory[address+1].indexValue = int((toAdd & 0x00FF00) / 0x100);
             memory[address+2].indexValue = (toAdd & 0x0000FF);
         else:
             print("ERROR CHANGING MEMORY: Integer value is too big. toAdd = 0x%X, 0d%d" %(toAdd, toAdd));
