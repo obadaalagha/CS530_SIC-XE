@@ -194,11 +194,7 @@ def changeMemory(toAdd, address):
         elif(toAdd < 0x10000):
             memory[address].trueValue = toAdd;
             memory[address].indexValue = (toAdd & 0x00FF00) >> 16;
-            memory[address+1].indexValue = (toAdd & 0x0000FF);
-        elif(toAdd < 0x1000000):
-            memory[address].trueValue = toAdd;
-            memory[address].indexValue = (toAdd & 0xFF0000) >> 16;
-            memory[address+1].indexValue = (toAdd & 0x00FF00) >> 8;
+            memory[address+1].indexValue = (toAdd & 0x0000FF) >> 8;
         elif(toAdd < 0x1000000):
             memory[address].trueValue = toAdd;
             memory[address].indexValue = (toAdd & 0xFF0000) >> 16;
